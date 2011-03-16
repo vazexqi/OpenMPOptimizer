@@ -47,27 +47,28 @@ public class PadScalarVariablesHandler extends AbstractHandler {
 		return null; // done
 	}
 
+	private void runRefactoring(IShellProvider shellProvider, IWorkingCopy workingCopy, ISelection selection) {
+		final IResource resource = workingCopy.getResource();
+		if (resource instanceof IFile) {
+			final PadScalarVariablesRunner runner = new PadScalarVariablesRunner((IFile) resource, selection, null, shellProvider,
+					workingCopy.getCProject());
+			runner.run();
+		}
+
+	}
+
 	private void runRefactoringIfPossible(ExecutionEvent event) {
 		// We have a <visibleWhen> check in the plugin.xml that there is an
 		// editor and that it is a CEditor so we are sure that the editor is
 		// present. The following statements collect the necessary information
 		// to pass to a RefactoringRunner.
-		IEditorPart editorPart = HandlerUtil.getActiveEditor(event);
-		IShellProvider shellProvider = editorPart.getEditorSite();
-		ITextEditor editor = (ITextEditor) editorPart;
-		IWorkingCopy workingCopy = CUIPlugin.getDefault().getWorkingCopyManager().getWorkingCopy(editor.getEditorInput());
-		ISelection selection = editor.getSelectionProvider().getSelection();
+		final IEditorPart editorPart = HandlerUtil.getActiveEditor(event);
+		final IShellProvider shellProvider = editorPart.getEditorSite();
+		final ITextEditor editor = (ITextEditor) editorPart;
+		final IWorkingCopy workingCopy = CUIPlugin.getDefault().getWorkingCopyManager().getWorkingCopy(editor.getEditorInput());
+		final ISelection selection = editor.getSelectionProvider().getSelection();
 
 		runRefactoring(shellProvider, workingCopy, selection);
-	}
-
-	private void runRefactoring(IShellProvider shellProvider, IWorkingCopy workingCopy, ISelection selection) {
-		IResource resource = workingCopy.getResource();
-		if (resource instanceof IFile) {
-			PadScalarVariablesRunner runner = new PadScalarVariablesRunner((IFile) resource, selection, null, shellProvider, workingCopy.getCProject());
-			runner.run();
-		}
-
 	}
 
 	private void saveAllEditors() {

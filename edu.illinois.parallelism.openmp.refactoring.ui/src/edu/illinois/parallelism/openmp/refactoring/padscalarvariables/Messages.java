@@ -12,7 +12,6 @@ package edu.illinois.parallelism.openmp.refactoring.padscalarvariables;
 
 import org.eclipse.osgi.util.NLS;
 
-
 public class Messages extends NLS {
 	private static final String BUNDLE_NAME = "edu.illinois.parallelism.openmp.refactoring.padscalarvariables.messages"; //$NON-NLS-1$
 	public static String PadScalarVariableRefactoring_humanName;

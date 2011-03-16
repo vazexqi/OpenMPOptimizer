@@ -19,7 +19,6 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.window.IShellProvider;
 import org.eclipse.ltk.ui.refactoring.RefactoringWizardOpenOperation;
 
-
 /**
  * 
  * @author nchen
@@ -28,24 +27,26 @@ import org.eclipse.ltk.ui.refactoring.RefactoringWizardOpenOperation;
 @SuppressWarnings("restriction")
 public class PadScalarVariablesRunner extends RefactoringRunner {
 
-	public PadScalarVariablesRunner(IFile file, ISelection selection, ICElement element, IShellProvider shellProvider, ICProject cProject) {
+	public PadScalarVariablesRunner(IFile file, ISelection selection, ICElement element, IShellProvider shellProvider,
+			ICProject cProject) {
 		super(file, selection, element, shellProvider, cProject);
 	}
 
 	@Override
 	public void run() {
-		PadScalarVariablesRefactoring refactoring = new PadScalarVariablesRefactoring(file, selection, celement, project);
+		final PadScalarVariablesRefactoring refactoring = new PadScalarVariablesRefactoring(file, selection, celement, project);
 
 		if (!refactoring.isWithinProperOMPRegion()) {
-			MessageDialog.openInformation(shellProvider.getShell(), Messages.PadScalarVariablesRunner_unavailableDialogTitle, Messages.PadScalarVariablesRunner_unavailableDialogInfo);
+			MessageDialog.openInformation(shellProvider.getShell(), Messages.PadScalarVariablesRunner_unavailableDialogTitle,
+					Messages.PadScalarVariablesRunner_unavailableDialogInfo);
 			return;
 		}
 
-		PadScalarVariablesWizard wizard = new PadScalarVariablesWizard(refactoring);
-		RefactoringWizardOpenOperation operation = new RefactoringWizardOpenOperation(wizard);
+		final PadScalarVariablesWizard wizard = new PadScalarVariablesWizard(refactoring);
+		final RefactoringWizardOpenOperation operation = new RefactoringWizardOpenOperation(wizard);
 		try {
 			operation.run(shellProvider.getShell(), refactoring.getName());
-		} catch (InterruptedException e) {
+		} catch (final InterruptedException e) {
 			// initial condition checking got canceled by the user.
 		}
 

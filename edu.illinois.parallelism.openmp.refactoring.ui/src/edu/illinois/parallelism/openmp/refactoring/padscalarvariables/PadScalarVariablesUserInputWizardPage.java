@@ -41,9 +41,63 @@ import edu.illinois.parallelism.openmp.refactoring.padscalarvariables.PadScalarV
 @SuppressWarnings("restriction")
 public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
-	private PadScalarVariablesRefactoring padScalarRefactoring;
+	class PadScalarVariableContentProvider implements ITreeContentProvider {
+
+		@Override
+		public void dispose() {
+			// Not applicable
+		}
+
+		@Override
+		public Object[] getChildren(Object parentElement) {
+			// No children to return
+			return null;
+		}
+
+		@Override
+		public Object[] getElements(Object inputElement) {
+			// The inputElement must be of type List<VariableToPadTuple>
+			if (inputElement instanceof List) {
+				final List<?> list = (List<?>) inputElement;
+				return list.toArray();
+			}
+			return null;
+		}
+
+		@Override
+		public Object getParent(Object element) {
+			// All elements are stand alone
+			return null;
+		}
+
+		@Override
+		public boolean hasChildren(Object element) {
+			return false;
+		}
+
+		@Override
+		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+			// Not applicable
+		}
+
+	}
+
+	class PadScalarVariableLabelProvider extends LabelProvider {
+
+		@Override
+		public Image getImage(Object element) {
+			if (element != null) {
+				return CElementImageProvider.getMethodImageDescriptor(ASTAccessVisibility.PUBLIC).createImage();
+			}
+			return null;
+		}
+	}
+
+	private final PadScalarVariablesRefactoring padScalarRefactoring;
 	private CheckboxTreeViewer variableSelectionView;
+
 	private PadScalarVariableLabelProvider labelProvider;
+
 	private PadScalarVariableContentProvider treeContentProvider;
 
 	public PadScalarVariablesUserInputWizardPage(PadScalarVariablesRefactoring padScalarRefactoring) {
@@ -51,9 +105,43 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		this.padScalarRefactoring = padScalarRefactoring;
 	}
 
+	private Composite createButtonComposite(Composite comp) {
+		final Composite btComp = new Composite(comp, SWT.NONE);
+		final FillLayout layout = new FillLayout(SWT.VERTICAL);
+		layout.spacing = 4;
+		btComp.setLayout(layout);
+
+		final Button selectAll = new Button(btComp, SWT.PUSH);
+		selectAll.setText(Messages.PadScalarVariablesUserInputWizardPage_selectAllButtonLabel);
+		selectAll.addSelectionListener(new SelectionAdapter() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				for (final VariableToPadTuple variable : padScalarRefactoring.getVariablesToPad()) {
+					variableSelectionView.setChecked(variable, true);
+				}
+			}
+
+		});
+
+		final Button deselectAll = new Button(btComp, SWT.PUSH);
+		deselectAll.setText(Messages.PadScalarVariablesUserInputWizardPage_deselectAllButtonLabel);
+		deselectAll.addSelectionListener(new SelectionAdapter() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				for (final VariableToPadTuple variable : padScalarRefactoring.getVariablesToPad()) {
+					variableSelectionView.setChecked(variable, false);
+				}
+			}
+
+		});
+		return btComp;
+	}
+
 	@Override
 	public void createControl(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NONE);
+		final Composite composite = new Composite(parent, SWT.NONE);
 
 		setTitle(Messages.PadScalarVariablesUserInputWizardPage_dialogTitle);
 		setMessage(Messages.PadScalarVariablesUserInputWizardPage_dialogMessage);
@@ -63,7 +151,7 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		GridData gridData = new GridData(GridData.FILL_BOTH);
 		variableSelectionView.getTree().setLayoutData(gridData);
 
-		Composite btComp = createButtonComposite(composite);
+		final Composite btComp = createButtonComposite(composite);
 		gridData = new GridData();
 		gridData.verticalAlignment = SWT.TOP;
 		btComp.setLayoutData(gridData);
@@ -94,99 +182,13 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 			@Override
 			public void checkStateChanged(CheckStateChangedEvent event) {
-				VariableToPadTuple tuple = (VariableToPadTuple) event.getElement();
+				final VariableToPadTuple tuple = (VariableToPadTuple) event.getElement();
 				tuple.setShouldPad(event.getChecked());
 			}
 		});
 
 		// Forced the tree to start displaying something
 		variableSelectionView.setInput(padScalarRefactoring.getVariablesToPad());
-	}
-
-	private Composite createButtonComposite(Composite comp) {
-		Composite btComp = new Composite(comp, SWT.NONE);
-		FillLayout layout = new FillLayout(SWT.VERTICAL);
-		layout.spacing = 4;
-		btComp.setLayout(layout);
-
-		Button selectAll = new Button(btComp, SWT.PUSH);
-		selectAll.setText(Messages.PadScalarVariablesUserInputWizardPage_selectAllButtonLabel);
-		selectAll.addSelectionListener(new SelectionAdapter() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				for (VariableToPadTuple variable : padScalarRefactoring.getVariablesToPad()) {
-					variableSelectionView.setChecked(variable, true);
-				}
-			}
-
-		});
-
-		Button deselectAll = new Button(btComp, SWT.PUSH);
-		deselectAll.setText(Messages.PadScalarVariablesUserInputWizardPage_deselectAllButtonLabel);
-		deselectAll.addSelectionListener(new SelectionAdapter() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				for (VariableToPadTuple variable : padScalarRefactoring.getVariablesToPad()) {
-					variableSelectionView.setChecked(variable, false);
-				}
-			}
-
-		});
-		return btComp;
-	}
-
-	class PadScalarVariableLabelProvider extends LabelProvider {
-
-		@Override
-		public Image getImage(Object element) {
-			if (element != null) {
-				return CElementImageProvider.getMethodImageDescriptor(ASTAccessVisibility.PUBLIC).createImage();
-			}
-			return null;
-		}
-	}
-
-	class PadScalarVariableContentProvider implements ITreeContentProvider {
-
-		@Override
-		public void dispose() {
-			// Not applicable
-		}
-
-		@Override
-		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-			// Not applicable
-		}
-
-		@Override
-		public Object[] getElements(Object inputElement) {
-			// The inputElement must be of type List<VariableToPadTuple>
-			if (inputElement instanceof List) {
-				List<?> list = (List<?>) inputElement;
-				return list.toArray();
-			}
-			return null;
-		}
-
-		@Override
-		public Object[] getChildren(Object parentElement) {
-			// No children to return
-			return null;
-		}
-
-		@Override
-		public Object getParent(Object element) {
-			// All elements are stand alone
-			return null;
-		}
-
-		@Override
-		public boolean hasChildren(Object element) {
-			return false;
-		}
-
 	}
 
 }
