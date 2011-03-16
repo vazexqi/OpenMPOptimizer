@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            name="%category.name"
+            id="edu.illinois.parallelism.openmp.ui">
+      </category>
+      <view
+            name="%view.name"
+            icon="icons/sample.gif"
+            category="edu.illinois.parallelism.openmp.ui"
+            class="edu.illinois.parallelism.openmp.ui.views.VariablesInCurrentParallelRegionView"
+            id="edu.illinois.parallelism.openmp.ui.views.VariablesInCurrentParallelRegionView">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="contexts.xml">
+      </contexts>
+   </extension>
+   <!--
+        This portion essentially duplicates what was originally created in CDT to preserve the 
+        layout and position of the existing refactoring menu items. CDT uses the older org.eclipse.ui.actionSets
+        extension point
+   !-->
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            locationURI="menu:org.eclipse.ui.main.menu?after=edit">
+         <menu
+               id="org.eclipse.jdt.ui.refactoring.menu"
+               label="%menu.label">
+            <separator 
+                  name="reorgGroup"
+                  visible="true"/>
+            <separator 
+                  name="codingGroup"
+                  visible="true" />
+            <separator 
+                  name="reorgGroup2"
+                  visible="true" />
+            <separator 
+                  name="typeGroup"
+                  visible="true" />
+            <separator 
+                  name="typeGroup2"
+                  visible="true" />
+            <separator 
+                  name="codingGroup2"
+                  visible="true" />
+            <separator 
+                  name="typeGroup3"
+                  visible ="true"/>
+            <separator
+                  name="openmpparallelism"
+                  visible="true"/>
+            <separator
+                  name="historyGroup"
+                  visible="true" />
+           </menu>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            categoryId="org.eclipse.cdt.ui.category.refactoring"
+            id="edu.illinois.parallelism.openmp.ui.padscalarvariables.command"
+            name="%command.name">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="edu.illinois.parallelism.handlers.PadScalarVariablesHandler"
+            commandId="edu.illinois.parallelism.openmp.ui.padscalarvariables.command">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            locationURI="menu:org.eclipse.jdt.ui.refactoring.menu?after=openmpparallelism">
+         <command
+               commandId="edu.illinois.parallelism.openmp.ui.padscalarvariables.command"
+               id="edu.illinois.parallelism.openmp.ui.menu.padscalarvariables.command"
+               label="%command.label"
+               style="push">
+                           <visibleWhen
+                  checkEnabled="false">
+               <reference
+                     definitionId="edu.illinois.parallelism.openmp.core.expression.test.ceditor">
+               </reference>
+            </visibleWhen>
+         </command>
+      </menuContribution>
+   </extension>
+      <extension point="org.eclipse.core.expressions.definitions">
+    <definition id="edu.illinois.parallelism.openmp.core.expression.test.ceditor">
+       <with variable="activePart">
+          <instanceof
+                value="org.eclipse.cdt.internal.ui.editor.CEditor">
+          </instanceof>
+       </with>
+    </definition>
+  </extension>
+</plugin>
