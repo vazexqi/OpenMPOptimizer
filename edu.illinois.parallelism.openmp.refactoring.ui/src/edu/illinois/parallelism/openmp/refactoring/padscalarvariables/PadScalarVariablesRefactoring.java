@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.cdt.core.dom.ast.ASTTypeUtil;
@@ -28,6 +29,7 @@ import org.eclipse.cdt.core.dom.ast.IASTName;
 import org.eclipse.cdt.core.dom.ast.IASTNode;
 import org.eclipse.cdt.core.dom.ast.IASTSimpleDeclSpecifier;
 import org.eclipse.cdt.core.dom.ast.IASTSimpleDeclaration;
+import org.eclipse.cdt.core.dom.ast.IASTTranslationUnit;
 import org.eclipse.cdt.core.dom.ast.IBasicType.Kind;
 import org.eclipse.cdt.core.dom.ast.IBinding;
 import org.eclipse.cdt.core.dom.ast.INodeFactory;
@@ -35,6 +37,13 @@ import org.eclipse.cdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.cdt.core.model.ICElement;
 import org.eclipse.cdt.core.model.ICProject;
 import org.eclipse.cdt.internal.core.dom.parser.c.CVariable;
+import org.eclipse.cdt.internal.core.dom.rewrite.ASTModification;
+import org.eclipse.cdt.internal.core.dom.rewrite.ASTModificationMap;
+import org.eclipse.cdt.internal.core.dom.rewrite.ASTModificationStore;
+import org.eclipse.cdt.internal.core.dom.rewrite.ASTRewriteAnalyzer;
+import org.eclipse.cdt.internal.core.dom.rewrite.astwriter.ASTWriter;
+import org.eclipse.cdt.internal.core.dom.rewrite.changegenerator.ChangeGenerator;
+import org.eclipse.cdt.internal.ui.refactoring.CCompositeChange;
 import org.eclipse.cdt.internal.ui.refactoring.CRefactoring;
 import org.eclipse.cdt.internal.ui.refactoring.ModificationCollector;
 import org.eclipse.core.resources.IFile;
@@ -45,10 +54,15 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.jface.text.Region;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.ltk.core.refactoring.Change;
+import org.eclipse.ltk.core.refactoring.RefactoringChangeDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.TextFileChange;
 import org.eclipse.ptp.pldt.openmp.analysis.OpenMPAnalysisManager;
 import org.eclipse.ptp.pldt.openmp.analysis.PAST.PASTOMPPragma;
+import org.eclipse.text.edits.InsertEdit;
+import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEditGroup;
 
 /**
@@ -113,6 +127,60 @@ public class PadScalarVariablesRefactoring extends CRefactoring {
 		variablesToPad = createVariableTuple(potentialVariablesToPad);
 
 		return status;
+	}
+
+	@Override
+	// public Change createChange(IProgressMonitor pm) throws CoreException,
+	// OperationCanceledException {
+	// ModificationCollector collector = new ModificationCollector();
+	// collectModifications(pm, collector);
+	// CCompositeChange finalChange = null;
+	// try {
+	// lockIndex();
+	// finalChange = collector.createFinalChange();
+	// } catch (InterruptedException e) {
+	// throw new OperationCanceledException();
+	// } finally {
+	// unlockIndex();
+	// }
+	//
+	// finalChange.setDescription(new
+	// RefactoringChangeDescriptor(getRefactoringDescriptor()));
+	// return finalChange;
+	// }
+	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
+		ModificationCollector collector = new ModificationCollector();
+		collectModifications(pm, collector);
+		TextFileChange subchange= ASTRewriteAnalyzer.createCTextFileChange(file);
+		MultiTextEdit edit = new MultiTextEdit();
+		try {
+			lockIndex();
+			// finalChange = collector.createFinalChange();
+			Map<IASTTranslationUnit, ASTRewrite> rewriters = collector.getRewriters();
+			ASTRewrite astRewrite = rewriters.get(ast);
+			ASTModificationStore modStore = astRewrite.getfModificationStore();
+			ASTModificationMap rootModifications = modStore.getNestedModifications(astRewrite.getfParentMod());
+			Collection<IASTNode> modifiedNodes = rootModifications.getModifiedNodes();
+			List<ASTModification> modificationsForNode = rootModifications.getModificationsForNode(modifiedNodes.toArray(new IASTNode[0])[0]);
+			for (ASTModification astModification : modificationsForNode) {
+				ASTWriter writer = new ASTWriter();
+				writer.setModificationStore(modStore);
+				String result = writer.write(astModification.getNewNode());
+				System.err.println(result);
+				ChangeGenerator gen = new ChangeGenerator(modStore, astRewrite.getfCommentMap());
+				int offsetIncludingComments = gen.getOffsetIncludingComments(astModification.getTargetNode());
+				InsertEdit insertion = new InsertEdit(offsetIncludingComments, result);
+				edit.addChild(insertion);
+			}
+		} catch (InterruptedException e) {
+			throw new OperationCanceledException();
+		} finally {
+			unlockIndex();
+		}
+
+		//subchange.setDescription(new RefactoringChangeDescriptor(getRefactoringDescriptor()));
+		subchange.setEdit(edit);
+		return subchange;
 	}
 
 	@Override
