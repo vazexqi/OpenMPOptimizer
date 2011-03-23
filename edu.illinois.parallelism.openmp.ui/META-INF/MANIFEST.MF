@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %Bundle-Name
-Bundle-SymbolicName: edu.illinois.parallelism.openmp.ui; singleton:=true
+Bundle-SymbolicName: edu.illinois.parallelism.openmp;singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Bundle-Activator: edu.illinois.parallelism.openmp.ui.Activator
+Bundle-Activator: edu.illinois.parallelism.openmp.Activator
 Bundle-Vendor: %Bundle-Vendor
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,

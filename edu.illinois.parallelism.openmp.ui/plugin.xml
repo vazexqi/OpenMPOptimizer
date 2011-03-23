@@ -2,26 +2,6 @@
 <?eclipse version="3.4"?>
 <plugin>
 
-   <extension
-         point="org.eclipse.ui.views">
-      <category
-            name="%category.name"
-            id="edu.illinois.parallelism.openmp.ui">
-      </category>
-      <view
-            name="%view.name"
-            icon="icons/sample.gif"
-            category="edu.illinois.parallelism.openmp.ui"
-            class="edu.illinois.parallelism.openmp.ui.views.VariablesInCurrentParallelRegionView"
-            id="edu.illinois.parallelism.openmp.ui.views.VariablesInCurrentParallelRegionView">
-      </view>
-   </extension>
-   <extension
-         point="org.eclipse.help.contexts">
-      <contexts
-            file="contexts.xml">
-      </contexts>
-   </extension>
    <!--
         This portion essentially duplicates what was originally created in CDT to preserve the 
         layout and position of the existing refactoring menu items. CDT uses the older org.eclipse.ui.actionSets
