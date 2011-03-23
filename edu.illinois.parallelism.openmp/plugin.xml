@@ -49,7 +49,7 @@
          point="org.eclipse.ui.commands">
       <command
             categoryId="org.eclipse.cdt.ui.category.refactoring"
-            id="edu.illinois.parallelism.openmp.ui.padscalarvariables.command"
+            id="edu.illinois.parallelism.openmp.padscalarvariables.command"
             name="%command.name">
       </command>
    </extension>
@@ -57,7 +57,7 @@
          point="org.eclipse.ui.handlers">
       <handler
             class="edu.illinois.parallelism.handlers.PadScalarVariablesHandler"
-            commandId="edu.illinois.parallelism.openmp.ui.padscalarvariables.command">
+            commandId="edu.illinois.parallelism.openmp.padscalarvariables.command">
       </handler>
    </extension>
    <extension
@@ -66,8 +66,8 @@
             allPopups="false"
             locationURI="menu:org.eclipse.jdt.ui.refactoring.menu?after=openmpparallelism">
          <command
-               commandId="edu.illinois.parallelism.openmp.ui.padscalarvariables.command"
-               id="edu.illinois.parallelism.openmp.ui.menu.padscalarvariables.command"
+               commandId="edu.illinois.parallelism.openmp.padscalarvariables.command"
+               id="edu.illinois.parallelism.openmp.menu.padscalarvariables.command"
                label="%command.label"
                style="push">
                            <visibleWhen

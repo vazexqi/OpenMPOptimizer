@@ -10,46 +10,40 @@
  *******************************************************************************/
 package edu.illinois.parallelism.openmp;
 
-import org.eclipse.core.runtime.Plugin;
+import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 /**
  * The activator class controls the plug-in life cycle
  */
-public class Activator extends Plugin {
+public class Activator implements BundleActivator {
 
-	// The plug-in ID
-	public static final String PLUGIN_ID = "edu.illinois.parallelism.openmp"; //$NON-NLS-1$
+	private static BundleContext context;
 
-	// The shared instance
-	private static Activator plugin;
-
-	/**
-	 * The constructor.
-	 */
-	public Activator() {
-		plugin = this;
+	static BundleContext getContext() {
+		return context;
 	}
 
-	/**
-	 * This method is called upon plug-in activation
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext
+	 * )
 	 */
-	public void start(BundleContext context) throws Exception {
-		super.start(context);
+	@Override
+	public void start(BundleContext bundleContext) throws Exception {
+		Activator.context = bundleContext;
 	}
 
-	/**
-	 * This method is called when the plug-in is stopped
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
 	 */
-	public void stop(BundleContext context) throws Exception {
-		super.stop(context);
-		plugin = null;
-	}
-
-	/**
-	 * @return the shared instance of this plugin.
-	 */
-	public static Activator getDefault() {
-		return plugin;
+	@Override
+	public void stop(BundleContext bundleContext) throws Exception {
+		Activator.context = null;
 	}
 }
