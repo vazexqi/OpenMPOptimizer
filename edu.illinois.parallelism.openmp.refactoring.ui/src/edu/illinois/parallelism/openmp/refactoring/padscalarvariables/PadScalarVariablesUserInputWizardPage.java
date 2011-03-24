@@ -13,12 +13,15 @@ package edu.illinois.parallelism.openmp.refactoring.padscalarvariables;
 import java.util.List;
 
 import org.eclipse.cdt.core.parser.ast.ASTAccessVisibility;
+import org.eclipse.cdt.internal.ui.util.TableLayoutComposite;
 import org.eclipse.cdt.internal.ui.viewsupport.CElementImageProvider;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
-import org.eclipse.jface.viewers.CheckboxTreeViewer;
+import org.eclipse.jface.viewers.CheckboxTableViewer;
+import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.ICheckStateListener;
-import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.ILabelProviderListener;
+import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
 import org.eclipse.swt.SWT;
@@ -30,75 +33,26 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
 
 import edu.illinois.parallelism.openmp.refactoring.padscalarvariables.PadScalarVariablesRefactoring.VariableToPadTuple;
 
 /**
+ * Creates a simple input page with tables to allow the user to select which
+ * variables to pad and to change their padding size.
  * 
  * @author nchen
  * 
  */
-@SuppressWarnings("restriction")
 public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
-	class PadScalarVariableContentProvider implements ITreeContentProvider {
-
-		@Override
-		public void dispose() {
-			// Not applicable
-		}
-
-		@Override
-		public Object[] getChildren(Object parentElement) {
-			// No children to return
-			return null;
-		}
-
-		@Override
-		public Object[] getElements(Object inputElement) {
-			// The inputElement must be of type List<VariableToPadTuple>
-			if (inputElement instanceof List) {
-				final List<?> list = (List<?>) inputElement;
-				return list.toArray();
-			}
-			return null;
-		}
-
-		@Override
-		public Object getParent(Object element) {
-			// All elements are stand alone
-			return null;
-		}
-
-		@Override
-		public boolean hasChildren(Object element) {
-			return false;
-		}
-
-		@Override
-		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-			// Not applicable
-		}
-
-	}
-
-	class PadScalarVariableLabelProvider extends LabelProvider {
-
-		@Override
-		public Image getImage(Object element) {
-			if (element != null) {
-				return CElementImageProvider.getMethodImageDescriptor(ASTAccessVisibility.PUBLIC).createImage();
-			}
-			return null;
-		}
-	}
-
+	private static final int DIALOG_HEIGHT = 200;
+	private static final int DIALOG_WIDTH = 300;
 	private final PadScalarVariablesRefactoring padScalarRefactoring;
-	private CheckboxTreeViewer variableSelectionView;
-
-	private PadScalarVariableLabelProvider labelProvider;
-
-	private PadScalarVariableContentProvider treeContentProvider;
+	private CheckboxTableViewer variableSelectionView;
+	private Table variableSelectionTable;
+	private PadScalarVariableContentProvider tableContentProvider;
 
 	public PadScalarVariablesUserInputWizardPage(PadScalarVariablesRefactoring padScalarRefactoring) {
 		super(Messages.PadScalarVariablesUserInputWizardPage_wizardPageTitle);
@@ -141,54 +95,135 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 	@Override
 	public void createControl(Composite parent) {
+		// Make the dialog smaller
+		parent.setSize(DIALOG_WIDTH, DIALOG_HEIGHT);
 		final Composite composite = new Composite(parent, SWT.NONE);
 
 		setTitle(Messages.PadScalarVariablesUserInputWizardPage_dialogTitle);
 		setMessage(Messages.PadScalarVariablesUserInputWizardPage_dialogMessage);
 
 		composite.setLayout(new GridLayout(2, false));
-		createTree(composite);
-		GridData gridData = new GridData(GridData.FILL_BOTH);
-		variableSelectionView.getTree().setLayoutData(gridData);
+		createTable(composite);
 
 		final Composite btComp = createButtonComposite(composite);
-		gridData = new GridData();
+		GridData gridData = new GridData();
 		gridData.verticalAlignment = SWT.TOP;
 		btComp.setLayoutData(gridData);
-
-		final Button placeImplemetation = new Button(composite, SWT.CHECK);
-		placeImplemetation.setText("Some bogus text");
-		gridData = new GridData();
-		placeImplemetation.setLayoutData(gridData);
-		placeImplemetation.addSelectionListener(new SelectionAdapter() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-
-			}
-
-		});
 
 		setControl(composite);
 	}
 
-	private void createTree(Composite composite) {
-		variableSelectionView = new CheckboxTreeViewer(composite, SWT.BORDER);
-		labelProvider = new PadScalarVariableLabelProvider();
-		variableSelectionView.setLabelProvider(labelProvider);
-		treeContentProvider = new PadScalarVariableContentProvider();
-		variableSelectionView.setContentProvider(treeContentProvider);
+	private void createTable(Composite composite) {
+		variableSelectionTable = new Table(composite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION
+				| SWT.CHECK);
+		variableSelectionTable.setLinesVisible(true);
+		variableSelectionTable.setHeaderVisible(true);
+
+		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
+		data.heightHint = 200;
+		variableSelectionTable.setLayoutData(data);
+
+		String[] tableHeaders = { "Variable", "Type", "Padding (bytes)" };
+
+		for (String tableHeader : tableHeaders) {
+			TableColumn column = new TableColumn(variableSelectionTable, SWT.NONE);
+			column.setText(tableHeader);
+			column.setAlignment(SWT.RIGHT);
+		}
+
+		variableSelectionView = new CheckboxTableViewer(variableSelectionTable);
+		tableContentProvider = new PadScalarVariableContentProvider();
+		variableSelectionView.setContentProvider(tableContentProvider);
+		variableSelectionView.setLabelProvider(new PadScalarVariableLabelProvider());
 		variableSelectionView.addCheckStateListener(new ICheckStateListener() {
 
 			@Override
 			public void checkStateChanged(CheckStateChangedEvent event) {
-				final VariableToPadTuple tuple = (VariableToPadTuple) event.getElement();
+				VariableToPadTuple tuple = (VariableToPadTuple) event.getElement();
 				tuple.setShouldPad(event.getChecked());
 			}
 		});
 
-		// Forced the tree to start displaying something
 		variableSelectionView.setInput(padScalarRefactoring.getVariablesToPad());
+		for (int i = 0; i < tableHeaders.length; i++) {
+			variableSelectionTable.getColumn(i).pack();
+		}
+		
+		//TODO: Allow the user to edit the table cells
 	}
 
+	private class PadScalarVariableContentProvider implements IStructuredContentProvider {
+
+		@Override
+		public Object[] getElements(Object inputElement) {
+			// The inputElement must be of type List<VariableToPadTuple>
+			if (inputElement instanceof List) {
+				final List<?> list = (List<?>) inputElement;
+				return list.toArray();
+			}
+			return null;
+		}
+
+		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+			// Do nothing since the viewer listens to resource deltas
+		}
+
+		public void dispose() {
+		}
+
+	}
+
+	private class PadScalarVariableLabelProvider implements ITableLabelProvider {
+
+		private static final int VARIABLE_NAME_COL = 0;
+		private static final int VARIABLE_TYPE_COL = 1;
+		private static final int VARIABLE_BYTES_COL = 2;
+
+		@SuppressWarnings("restriction")
+		public Image getColumnImage(Object element, int columnIndex) {
+			if (columnIndex == VARIABLE_NAME_COL) {
+				if (element != null) {
+					return CElementImageProvider.getMethodImageDescriptor(ASTAccessVisibility.PUBLIC).createImage();
+				}
+			}
+			return null;
+		}
+
+		@Override
+		public String getColumnText(Object element, int columnIndex) {
+			VariableToPadTuple tuple = (VariableToPadTuple) element;
+			switch (columnIndex) {
+			case VARIABLE_NAME_COL:
+				return tuple.getName().toString();
+			case VARIABLE_TYPE_COL:
+				return "int";
+			case VARIABLE_BYTES_COL:
+				return new Integer(tuple.getBytesToPad()).toString();
+
+			default:
+				return null;
+			}
+		}
+
+		// The following methods are not applicable
+
+		@Override
+		public void addListener(ILabelProviderListener listener) {
+		}
+
+		@Override
+		public void dispose() {
+		}
+
+		@Override
+		public boolean isLabelProperty(Object element, String property) {
+			return false;
+		}
+
+		@Override
+		public void removeListener(ILabelProviderListener listener) {
+		}
+
+	}
+	// TODO: Disable the NEXT button if nothing is selected
 }

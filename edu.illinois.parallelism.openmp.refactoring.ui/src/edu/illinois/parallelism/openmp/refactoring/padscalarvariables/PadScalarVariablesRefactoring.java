@@ -43,7 +43,6 @@ import org.eclipse.cdt.internal.core.dom.rewrite.ASTModificationStore;
 import org.eclipse.cdt.internal.core.dom.rewrite.ASTRewriteAnalyzer;
 import org.eclipse.cdt.internal.core.dom.rewrite.astwriter.ASTWriter;
 import org.eclipse.cdt.internal.core.dom.rewrite.changegenerator.ChangeGenerator;
-import org.eclipse.cdt.internal.ui.refactoring.CCompositeChange;
 import org.eclipse.cdt.internal.ui.refactoring.CRefactoring;
 import org.eclipse.cdt.internal.ui.refactoring.ModificationCollector;
 import org.eclipse.core.resources.IFile;
@@ -55,7 +54,6 @@ import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.jface.text.Region;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ltk.core.refactoring.Change;
-import org.eclipse.ltk.core.refactoring.RefactoringChangeDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
@@ -76,6 +74,7 @@ public class PadScalarVariablesRefactoring extends CRefactoring {
 	class VariableToPadTuple {
 		IASTName name;
 		boolean shouldPad;
+		int bytesToPad = 8;
 
 		public VariableToPadTuple(IASTName _name) {
 			name = _name;
@@ -95,11 +94,18 @@ public class PadScalarVariablesRefactoring extends CRefactoring {
 			return new String(name.getSimpleID());
 		}
 
+		public void setBytesToPad(int bytes) {
+			bytesToPad = bytes;
+		}
+
+		public int getBytesToPad() {
+			return bytesToPad;
+		}
+
 	}
 
 	private OpenMPAnalysisManager ompManager;
 	private IASTNode nodeToRefactor;
-	private int bytesToPad = 8;
 
 	private List<VariableToPadTuple> variablesToPad;
 
@@ -130,38 +136,20 @@ public class PadScalarVariablesRefactoring extends CRefactoring {
 	}
 
 	@Override
-	// public Change createChange(IProgressMonitor pm) throws CoreException,
-	// OperationCanceledException {
-	// ModificationCollector collector = new ModificationCollector();
-	// collectModifications(pm, collector);
-	// CCompositeChange finalChange = null;
-	// try {
-	// lockIndex();
-	// finalChange = collector.createFinalChange();
-	// } catch (InterruptedException e) {
-	// throw new OperationCanceledException();
-	// } finally {
-	// unlockIndex();
-	// }
-	//
-	// finalChange.setDescription(new
-	// RefactoringChangeDescriptor(getRefactoringDescriptor()));
-	// return finalChange;
-	// }
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		ModificationCollector collector = new ModificationCollector();
 		collectModifications(pm, collector);
-		TextFileChange subchange= ASTRewriteAnalyzer.createCTextFileChange(file);
+		TextFileChange subchange = ASTRewriteAnalyzer.createCTextFileChange(file);
 		MultiTextEdit edit = new MultiTextEdit();
 		try {
 			lockIndex();
-			// finalChange = collector.createFinalChange();
 			Map<IASTTranslationUnit, ASTRewrite> rewriters = collector.getRewriters();
 			ASTRewrite astRewrite = rewriters.get(ast);
 			ASTModificationStore modStore = astRewrite.getfModificationStore();
 			ASTModificationMap rootModifications = modStore.getNestedModifications(astRewrite.getfParentMod());
 			Collection<IASTNode> modifiedNodes = rootModifications.getModifiedNodes();
-			List<ASTModification> modificationsForNode = rootModifications.getModificationsForNode(modifiedNodes.toArray(new IASTNode[0])[0]);
+			List<ASTModification> modificationsForNode = rootModifications.getModificationsForNode(modifiedNodes
+					.toArray(new IASTNode[0])[0]);
 			for (ASTModification astModification : modificationsForNode) {
 				ASTWriter writer = new ASTWriter();
 				writer.setModificationStore(modStore);
@@ -178,7 +166,6 @@ public class PadScalarVariablesRefactoring extends CRefactoring {
 			unlockIndex();
 		}
 
-		//subchange.setDescription(new RefactoringChangeDescriptor(getRefactoringDescriptor()));
 		subchange.setEdit(edit);
 		return subchange;
 	}
@@ -197,7 +184,7 @@ public class PadScalarVariablesRefactoring extends CRefactoring {
 						final String paddingVariableName = new String(variable.getName().toString() + "_padding");
 						final IASTName name = factory.newName(paddingVariableName.toCharArray());
 						final IASTArrayModifier arrayModifier = factory.newArrayModifier(factory.newLiteralExpression(
-								IASTLiteralExpression.lk_integer_constant, new Integer(bytesToPad).toString()));
+								IASTLiteralExpression.lk_integer_constant, new Integer(variable.getBytesToPad()).toString()));
 						final IASTArrayDeclarator newArrayDeclarator = factory.newArrayDeclarator(name);
 						newArrayDeclarator.addArrayModifier(arrayModifier);
 						final IASTSimpleDeclSpecifier newSimpleDeclSpecifier = factory.newSimpleDeclSpecifier();
@@ -240,10 +227,6 @@ public class PadScalarVariablesRefactoring extends CRefactoring {
 			}
 		}
 		return filteredVariables;
-	}
-
-	public int getBytesToPad() {
-		return bytesToPad;
 	}
 
 	@Override
@@ -384,10 +367,6 @@ public class PadScalarVariablesRefactoring extends CRefactoring {
 
 	private boolean selectionIsBeforeOMPPragmaEnd(PASTOMPPragma ompPragma) {
 		return region.getOffset() <= (ompPragma.getRegionOffset() + ompPragma.getRegionLength());
-	}
-
-	public void setBytesToPad(int bytesToPad) {
-		this.bytesToPad = bytesToPad;
 	}
 
 	// We are only interested in the cursor position and not the selection
