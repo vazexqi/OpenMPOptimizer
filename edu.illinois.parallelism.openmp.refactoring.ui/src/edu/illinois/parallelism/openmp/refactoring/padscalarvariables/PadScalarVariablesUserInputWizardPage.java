@@ -13,7 +13,6 @@ package edu.illinois.parallelism.openmp.refactoring.padscalarvariables;
 import java.util.List;
 
 import org.eclipse.cdt.core.parser.ast.ASTAccessVisibility;
-import org.eclipse.cdt.internal.ui.util.TableLayoutComposite;
 import org.eclipse.cdt.internal.ui.viewsupport.CElementImageProvider;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
@@ -22,6 +21,7 @@ import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
+import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
 import org.eclipse.swt.SWT;
@@ -45,10 +45,9 @@ import edu.illinois.parallelism.openmp.refactoring.padscalarvariables.PadScalarV
  * @author nchen
  * 
  */
+@SuppressWarnings("restriction")
 public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
-	private static final int DIALOG_HEIGHT = 200;
-	private static final int DIALOG_WIDTH = 300;
 	private final PadScalarVariablesRefactoring padScalarRefactoring;
 	private CheckboxTableViewer variableSelectionView;
 	private Table variableSelectionTable;
@@ -95,8 +94,6 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 	@Override
 	public void createControl(Composite parent) {
-		// Make the dialog smaller
-		parent.setSize(DIALOG_WIDTH, DIALOG_HEIGHT);
 		final Composite composite = new Composite(parent, SWT.NONE);
 
 		setTitle(Messages.PadScalarVariablesUserInputWizardPage_dialogTitle);
@@ -111,25 +108,42 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		btComp.setLayoutData(gridData);
 
 		setControl(composite);
+
+		resizeDialog(composite);
+	}
+
+	private void resizeDialog(final Composite composite) {
+		final int DIALOG_WIDTH = 600;
+		final int DIALOG_HEIGHT = 500;
+		composite.getShell().setSize(DIALOG_WIDTH, DIALOG_HEIGHT);
+		composite.getShell().layout(true, true);
 	}
 
 	private void createTable(Composite composite) {
+		TableLayout tableLayout = new TableLayout();
+		tableLayout.addColumnData(new ColumnWeightData(30, 50, true));
+		tableLayout.addColumnData(new ColumnWeightData(20, 40, true));
+		tableLayout.addColumnData(new ColumnWeightData(20, 40, true));
+		tableLayout.addColumnData(new ColumnWeightData(10, 10, true));
+
 		variableSelectionTable = new Table(composite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION
 				| SWT.CHECK);
+		variableSelectionTable.setLayout(tableLayout);
 		variableSelectionTable.setLinesVisible(true);
 		variableSelectionTable.setHeaderVisible(true);
 
 		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
-		data.heightHint = 200;
+		data.heightHint = 100;
 		variableSelectionTable.setLayoutData(data);
 
-		String[] tableHeaders = { "Variable", "Type", "Padding (bytes)" };
-
-		for (String tableHeader : tableHeaders) {
-			TableColumn column = new TableColumn(variableSelectionTable, SWT.NONE);
-			column.setText(tableHeader);
-			column.setAlignment(SWT.RIGHT);
-		}
+		TableColumn column = new TableColumn(variableSelectionTable, SWT.LEFT);
+		column.setText("Variable");
+		column = new TableColumn(variableSelectionTable, SWT.RIGHT);
+		column.setText("Type");
+		column = new TableColumn(variableSelectionTable, SWT.RIGHT);
+		column.setText("Padding (bytes)");
+		column = new TableColumn(variableSelectionTable, SWT.RIGHT);
+		column.setText("");
 
 		variableSelectionView = new CheckboxTableViewer(variableSelectionTable);
 		tableContentProvider = new PadScalarVariableContentProvider();
@@ -145,11 +159,7 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		});
 
 		variableSelectionView.setInput(padScalarRefactoring.getVariablesToPad());
-		for (int i = 0; i < tableHeaders.length; i++) {
-			variableSelectionTable.getColumn(i).pack();
-		}
-		
-		//TODO: Allow the user to edit the table cells
+		// TODO: Allow the user to edit the table cells
 	}
 
 	private class PadScalarVariableContentProvider implements IStructuredContentProvider {
@@ -179,7 +189,6 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		private static final int VARIABLE_TYPE_COL = 1;
 		private static final int VARIABLE_BYTES_COL = 2;
 
-		@SuppressWarnings("restriction")
 		public Image getColumnImage(Object element, int columnIndex) {
 			if (columnIndex == VARIABLE_NAME_COL) {
 				if (element != null) {
