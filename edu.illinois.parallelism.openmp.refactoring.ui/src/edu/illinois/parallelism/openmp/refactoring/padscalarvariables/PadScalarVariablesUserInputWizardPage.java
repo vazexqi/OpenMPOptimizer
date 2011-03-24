@@ -14,19 +14,24 @@ import java.util.List;
 
 import org.eclipse.cdt.core.parser.ast.ASTAccessVisibility;
 import org.eclipse.cdt.internal.ui.viewsupport.CElementImageProvider;
+import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.jface.viewers.ColumnWeightData;
+import org.eclipse.jface.viewers.ICellModifier;
 import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.TableLayout;
+import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
@@ -35,6 +40,8 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.Text;
 
 import edu.illinois.parallelism.openmp.refactoring.padscalarvariables.PadScalarVariablesRefactoring.VariableToPadTuple;
 
@@ -49,8 +56,8 @@ import edu.illinois.parallelism.openmp.refactoring.padscalarvariables.PadScalarV
 public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 	private final PadScalarVariablesRefactoring padScalarRefactoring;
-	private CheckboxTableViewer variableSelectionView;
-	private Table variableSelectionTable;
+	private CheckboxTableViewer tableViewer;
+	private Table table;
 	private PadScalarVariableContentProvider tableContentProvider;
 
 	public PadScalarVariablesUserInputWizardPage(PadScalarVariablesRefactoring padScalarRefactoring) {
@@ -70,8 +77,9 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				for (final VariableToPadTuple variable : padScalarRefactoring.getVariablesToPad()) {
-					variableSelectionView.setChecked(variable, true);
+				for (final VariableToPadTuple variable :
+				padScalarRefactoring.getVariablesToPad()) {
+					tableViewer.setChecked(variable, true);
 				}
 			}
 
@@ -83,8 +91,9 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				for (final VariableToPadTuple variable : padScalarRefactoring.getVariablesToPad()) {
-					variableSelectionView.setChecked(variable, false);
+				for (final VariableToPadTuple variable :
+				padScalarRefactoring.getVariablesToPad()) {
+					tableViewer.setChecked(variable, false);
 				}
 			}
 
@@ -101,6 +110,8 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 		composite.setLayout(new GridLayout(2, false));
 		createTable(composite);
+		createTableViewer();
+		tableViewer.setInput(padScalarRefactoring.getVariablesToPad());
 
 		final Composite btComp = createButtonComposite(composite);
 		GridData gridData = new GridData();
@@ -108,7 +119,6 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		btComp.setLayoutData(gridData);
 
 		setControl(composite);
-
 		resizeDialog(composite);
 	}
 
@@ -119,6 +129,20 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		composite.getShell().layout(true, true);
 	}
 
+	// Set the table column property names
+	private static final String VARIABLE_COLUMN = "Variable";
+	private static final String TYPE_COLUMN = "Type";
+	private static final String BYTE_COLUMN = "Bytes to pad";
+	private static final String SPACER_COLUMN = "";
+
+	// Set column names
+	private String[] columnNames = new String[] {
+			VARIABLE_COLUMN,
+			TYPE_COLUMN,
+			BYTE_COLUMN,
+			SPACER_COLUMN
+	};
+
 	private void createTable(Composite composite) {
 		TableLayout tableLayout = new TableLayout();
 		tableLayout.addColumnData(new ColumnWeightData(30, 50, true));
@@ -126,30 +150,37 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		tableLayout.addColumnData(new ColumnWeightData(20, 40, true));
 		tableLayout.addColumnData(new ColumnWeightData(10, 10, true));
 
-		variableSelectionTable = new Table(composite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION
-				| SWT.CHECK);
-		variableSelectionTable.setLayout(tableLayout);
-		variableSelectionTable.setLinesVisible(true);
-		variableSelectionTable.setHeaderVisible(true);
+		table = new Table(composite, SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL |
+				SWT.FULL_SELECTION | SWT.CHECK);
+		table.setLayout(tableLayout);
+		table.setLinesVisible(true);
+		table.setHeaderVisible(true);
 
 		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
 		data.heightHint = 100;
-		variableSelectionTable.setLayoutData(data);
+		table.setLayoutData(data);
 
-		TableColumn column = new TableColumn(variableSelectionTable, SWT.LEFT);
-		column.setText("Variable");
-		column = new TableColumn(variableSelectionTable, SWT.RIGHT);
-		column.setText("Type");
-		column = new TableColumn(variableSelectionTable, SWT.RIGHT);
-		column.setText("Padding (bytes)");
-		column = new TableColumn(variableSelectionTable, SWT.RIGHT);
-		column.setText("");
+		TableColumn column = new TableColumn(table, SWT.LEFT, 0);
+		column.setText(VARIABLE_COLUMN);
+		column = new TableColumn(table, SWT.RIGHT, 1);
+		column.setText(TYPE_COLUMN);
+		column = new TableColumn(table, SWT.RIGHT, 2);
+		column.setText(BYTE_COLUMN);
+		column = new TableColumn(table, SWT.RIGHT, 3);
+		column.setText(SPACER_COLUMN);
 
-		variableSelectionView = new CheckboxTableViewer(variableSelectionTable);
+	}
+
+	private void createTableViewer() {
+		tableViewer = new CheckboxTableViewer(table);
+		tableViewer.setUseHashlookup(true);
+		tableViewer.setColumnProperties(columnNames);
+
 		tableContentProvider = new PadScalarVariableContentProvider();
-		variableSelectionView.setContentProvider(tableContentProvider);
-		variableSelectionView.setLabelProvider(new PadScalarVariableLabelProvider());
-		variableSelectionView.addCheckStateListener(new ICheckStateListener() {
+		tableViewer.setContentProvider(tableContentProvider);
+		tableViewer.setLabelProvider(new PadScalarVariableLabelProvider());
+		tableViewer.addCheckStateListener(new ICheckStateListener()
+		{
 
 			@Override
 			public void checkStateChanged(CheckStateChangedEvent event) {
@@ -158,11 +189,64 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 			}
 		});
 
-		variableSelectionView.setInput(padScalarRefactoring.getVariablesToPad());
-		// TODO: Allow the user to edit the table cells
+		tableViewer.setCellEditors(setUpCellEditors());
+		tableViewer.setCellModifier(new BytesToPadCellModifier());
 	}
 
-	private class PadScalarVariableContentProvider implements IStructuredContentProvider {
+	private CellEditor[] setUpCellEditors() {
+		// We have 3 real columns and one "pseudo" column for spacing
+		CellEditor[] editors = new CellEditor[columnNames.length];
+		editors[0] = editors[1] = editors[3] = null;
+
+		TextCellEditor byteEditor = new TextCellEditor(table);
+		((Text) byteEditor.getControl()).addVerifyListener(
+
+				new VerifyListener() {
+					public void verifyText(VerifyEvent e) {
+						e.doit = e.text.matches("[1-9][0-9]*");
+					}
+				});
+		editors[2] = byteEditor;
+		return editors;
+	}
+
+	private final class BytesToPadCellModifier implements ICellModifier {
+
+		// These methods are called in this order. First, ask if we "canModify"
+		// the value. If we can, then proceed to "getValue". And if the user
+		// enters a valid text, then proceed to "modify" the old value.
+
+		@Override
+		public boolean canModify(Object element, String property) {
+			// Only allow modification in the bytes column
+			return property.equals(BYTE_COLUMN);
+		}
+
+		@Override
+		public Object getValue(Object element, String property) {
+			if (property.equals(BYTE_COLUMN)) {
+				VariableToPadTuple tuple = (VariableToPadTuple) element;
+				return (new Integer(tuple.getBytesToPad())).toString();
+			}
+			return null;
+		}
+
+		@Override
+		public void modify(Object element, String property, Object value) {
+			TableItem item = (TableItem) element;
+			VariableToPadTuple tuple = (VariableToPadTuple) item.getData();
+
+			if (property.equals(BYTE_COLUMN)) {
+				tuple.setBytesToPad(new Integer(value.toString()));
+			}
+
+			tableViewer.refresh(tuple);
+		}
+		
+		//TODO: If a user makes some changes, then select/check that variable for padding
+	}
+
+	private final class PadScalarVariableContentProvider implements IStructuredContentProvider {
 
 		@Override
 		public Object[] getElements(Object inputElement) {
@@ -175,7 +259,6 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		}
 
 		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-			// Do nothing since the viewer listens to resource deltas
 		}
 
 		public void dispose() {
@@ -183,7 +266,7 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 	}
 
-	private class PadScalarVariableLabelProvider implements ITableLabelProvider {
+	private final class PadScalarVariableLabelProvider implements ITableLabelProvider {
 
 		private static final int VARIABLE_NAME_COL = 0;
 		private static final int VARIABLE_TYPE_COL = 1;
@@ -210,7 +293,7 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 				return new Integer(tuple.getBytesToPad()).toString();
 
 			default:
-				return null;
+				return "";
 			}
 		}
 
