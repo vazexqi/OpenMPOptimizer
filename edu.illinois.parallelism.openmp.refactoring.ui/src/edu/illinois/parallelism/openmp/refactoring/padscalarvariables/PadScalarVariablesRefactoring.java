@@ -77,6 +77,10 @@ public class PadScalarVariablesRefactoring extends MinimalTextChangeCRefactoring
 		public void setShouldPad(boolean value) {
 			shouldPad = value;
 		}
+		
+		public boolean getShouldPad() {
+			return shouldPad;
+		}
 
 		@Override
 		public String toString() {

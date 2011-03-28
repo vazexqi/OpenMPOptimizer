@@ -26,6 +26,7 @@ import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.wizard.IWizardContainer2;
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -63,6 +64,7 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 	public PadScalarVariablesUserInputWizardPage(PadScalarVariablesRefactoring padScalarRefactoring) {
 		super(Messages.PadScalarVariablesUserInputWizardPage_wizardPageTitle);
 		this.padScalarRefactoring = padScalarRefactoring;
+		setPageComplete(false); // Cannot proceed until selection is made
 	}
 
 	private Composite createButtonComposite(Composite comp) {
@@ -77,8 +79,7 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				for (final VariableToPadTuple variable :
-				padScalarRefactoring.getVariablesToPad()) {
+				for (final VariableToPadTuple variable : padScalarRefactoring.getVariablesToPad()) {
 					tableViewer.setChecked(variable, true);
 				}
 			}
@@ -91,8 +92,7 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				for (final VariableToPadTuple variable :
-				padScalarRefactoring.getVariablesToPad()) {
+				for (final VariableToPadTuple variable : padScalarRefactoring.getVariablesToPad()) {
 					tableViewer.setChecked(variable, false);
 				}
 			}
@@ -126,7 +126,8 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		final int DIALOG_WIDTH = 600;
 		final int DIALOG_HEIGHT = 500;
 		composite.getShell().setSize(DIALOG_WIDTH, DIALOG_HEIGHT);
-		composite.getShell().layout(true, true);
+		// composite.getShell().layout(true, true);
+		((IWizardContainer2) getContainer()).updateSize();
 	}
 
 	// Set the table column property names
@@ -179,13 +180,14 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		tableContentProvider = new PadScalarVariableContentProvider();
 		tableViewer.setContentProvider(tableContentProvider);
 		tableViewer.setLabelProvider(new PadScalarVariableLabelProvider());
-		tableViewer.addCheckStateListener(new ICheckStateListener()
-		{
+		tableViewer.addCheckStateListener(new ICheckStateListener() {
 
 			@Override
 			public void checkStateChanged(CheckStateChangedEvent event) {
 				VariableToPadTuple tuple = (VariableToPadTuple) event.getElement();
 				tuple.setShouldPad(event.getChecked());
+
+				updateNavigation();
 			}
 		});
 
@@ -242,8 +244,9 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 			tableViewer.refresh(tuple);
 		}
-		
-		//TODO: If a user makes some changes, then select/check that variable for padding
+
+		// TODO: If a user makes some changes, then select/check that variable
+		// for padding
 	}
 
 	private final class PadScalarVariableContentProvider implements IStructuredContentProvider {
@@ -317,5 +320,20 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		}
 
 	}
-	// TODO: Disable the NEXT button if nothing is selected
+
+	private boolean checkForAtLeastOneSelection() {
+		boolean atLeastOneSelected = false;
+		for (final VariableToPadTuple variable : padScalarRefactoring.getVariablesToPad()) {
+			if (variable.getShouldPad()) {
+				atLeastOneSelected = true;
+				break;
+			}
+		}
+		return atLeastOneSelected;
+	}
+
+	private void updateNavigation() {
+		setPageComplete(checkForAtLeastOneSelection());
+	}
+
 }
