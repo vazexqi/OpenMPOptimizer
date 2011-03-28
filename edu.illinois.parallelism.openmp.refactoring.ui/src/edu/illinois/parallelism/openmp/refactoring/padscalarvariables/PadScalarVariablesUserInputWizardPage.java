@@ -26,7 +26,6 @@ import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.wizard.IWizardContainer2;
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -67,7 +66,7 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		setPageComplete(false); // Cannot proceed until selection is made
 	}
 
-	private Composite createButtonComposite(Composite comp) {
+	private void createButtonComposite(Composite comp) {
 		final Composite btComp = new Composite(comp, SWT.NONE);
 		final FillLayout layout = new FillLayout(SWT.VERTICAL);
 		layout.spacing = 4;
@@ -98,7 +97,9 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 			}
 
 		});
-		return btComp;
+		GridData gridData = new GridData();
+		gridData.verticalAlignment = SWT.TOP;
+		btComp.setLayoutData(gridData);
 	}
 
 	@Override
@@ -113,21 +114,17 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 		createTableViewer();
 		tableViewer.setInput(padScalarRefactoring.getVariablesToPad());
 
-		final Composite btComp = createButtonComposite(composite);
-		GridData gridData = new GridData();
-		gridData.verticalAlignment = SWT.TOP;
-		btComp.setLayoutData(gridData);
+		createButtonComposite(composite);
 
 		setControl(composite);
-		resizeDialog(composite);
+		resizeDialog();
 	}
 
-	private void resizeDialog(final Composite composite) {
+	private void resizeDialog() {
 		final int DIALOG_WIDTH = 600;
-		final int DIALOG_HEIGHT = 500;
-		composite.getShell().setSize(DIALOG_WIDTH, DIALOG_HEIGHT);
-		// composite.getShell().layout(true, true);
-		((IWizardContainer2) getContainer()).updateSize();
+		final int DIALOG_HEIGHT = 400;
+		getShell().setSize(DIALOG_WIDTH, DIALOG_HEIGHT);
+		getShell().layout(true, true);
 	}
 
 	// Set the table column property names
@@ -334,6 +331,9 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 
 	private void updateNavigation() {
 		setPageComplete(checkForAtLeastOneSelection());
+		// TODO: This should not need to be called every time but it needs to be
+		// called at least once when the page has finished being laid out
+		getShell().layout(true, true);
 	}
 
 }
