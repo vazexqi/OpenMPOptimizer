@@ -32,6 +32,7 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ltk.core.refactoring.Change;
+import org.eclipse.ltk.core.refactoring.CompositeChange;
 import org.eclipse.text.edits.InsertEdit;
 import org.eclipse.text.edits.MultiTextEdit;
 
@@ -40,7 +41,7 @@ import edu.illinois.parallelism.openmp.refactoring.utilities.Activator;
 @SuppressWarnings("restriction")
 public abstract class MinimalTextChangeCRefactoring extends CRefactoring {
 
-	private CCompositeChange finalChanges;
+	private CompositeChange finalChanges;
 	private ModificationCollector collector;
 
 	public MinimalTextChangeCRefactoring(IFile file, ISelection selection, ICElement element, ICProject proj) {
@@ -49,10 +50,7 @@ public abstract class MinimalTextChangeCRefactoring extends CRefactoring {
 
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		finalChanges = new CCompositeChange("Changes for this C/C++ Refactoring");
-		// See how they mark the changes as synthetic in
-		// org.eclipse.cdt.internal.ui.refactoring.ModificationCollector.createFinalChange()
-		finalChanges.markAsSynthetic();
+		finalChanges = new CompositeChange("Changes for this C/C++ Refactoring");
 		collector = new ModificationCollector();
 		collectModifications(pm, collector);
 		try {
@@ -113,16 +111,20 @@ public abstract class MinimalTextChangeCRefactoring extends CRefactoring {
 		MultiTextEdit edit = new MultiTextEdit();
 		List<ASTModification> modificationsForNode = rootModifications.getModificationsForNode(modifiedNode);
 		for (ASTModification astModification : modificationsForNode) {
-			ASTWriter writer = new ASTWriter();
-			writer.setModificationStore(modStore);
+			ASTWriter writer;
+			IASTNode targetNode = astModification.getTargetNode();
 
 			switch (astModification.getKind()) {
 			case INSERT_BEFORE:
-				String result = writer.write(astModification.getNewNode());
-				System.err.println(result);
 				ChangeGenerator gen = new ChangeGenerator(modStore, rewriter.getfCommentMap());
-				int offsetIncludingComments = gen.getOffsetIncludingComments(astModification.getTargetNode());
-				InsertEdit insertion = new InsertEdit(offsetIncludingComments, result);
+				String indent = gen.getIndent(targetNode);
+				writer = new ASTWriter(indent);
+				writer.setModificationStore(modStore);
+				String result = writer.write(astModification.getNewNode());
+
+				int offsetIncludingComments = gen.getOffsetIncludingComments(targetNode);
+				int offsetFlushedAgainstLeftMargin = offsetIncludingComments - indent.length();
+				InsertEdit insertion = new InsertEdit(offsetFlushedAgainstLeftMargin, result);
 				edit.addChild(insertion);
 				break;
 			// TODO: Handle these two cases
