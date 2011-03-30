@@ -80,7 +80,9 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 			public void widgetSelected(SelectionEvent e) {
 				for (final VariableToPadTuple variable : padScalarRefactoring.getVariablesToPad()) {
 					tableViewer.setChecked(variable, true);
+					variable.setShouldPad(true);
 				}
+				updateNavigation();
 			}
 
 		});
@@ -93,7 +95,9 @@ public class PadScalarVariablesUserInputWizardPage extends UserInputWizardPage {
 			public void widgetSelected(SelectionEvent e) {
 				for (final VariableToPadTuple variable : padScalarRefactoring.getVariablesToPad()) {
 					tableViewer.setChecked(variable, false);
+					variable.setShouldPad(false);
 				}
+				updateNavigation();
 			}
 
 		});
