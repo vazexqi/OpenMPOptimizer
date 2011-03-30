@@ -45,14 +45,14 @@ public abstract class MinimalTextChangeCRefactoring extends CRefactoring {
 
 	public MinimalTextChangeCRefactoring(IFile file, ISelection selection, ICElement element, ICProject proj) {
 		super(file, selection, element, proj);
-		finalChanges = new CCompositeChange("Changes for this C/C++ Refactoring");
-		// See how they mark the changes as synthetic in
-		// org.eclipse.cdt.internal.ui.refactoring.ModificationCollector.createFinalChange()
-		finalChanges.markAsSynthetic();
 	}
 
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
+		finalChanges = new CCompositeChange("Changes for this C/C++ Refactoring");
+		// See how they mark the changes as synthetic in
+		// org.eclipse.cdt.internal.ui.refactoring.ModificationCollector.createFinalChange()
+		finalChanges.markAsSynthetic();
 		collector = new ModificationCollector();
 		collectModifications(pm, collector);
 		try {
