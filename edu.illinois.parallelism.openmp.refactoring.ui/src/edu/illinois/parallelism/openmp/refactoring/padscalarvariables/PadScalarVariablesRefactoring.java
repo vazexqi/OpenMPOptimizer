@@ -60,43 +60,6 @@ import edu.illinois.parallelism.openmp.crefactoring.MinimalTextChangeCRefactorin
 @SuppressWarnings("restriction")
 public class PadScalarVariablesRefactoring extends MinimalTextChangeCRefactoring {
 
-	class VariableToPadTuple {
-		IASTName name;
-		boolean shouldPad;
-		int bytesToPad = 8;
-
-		public VariableToPadTuple(IASTName _name) {
-			name = _name;
-			shouldPad = false;
-		}
-
-		public IASTName getName() {
-			return name;
-		}
-
-		public void setShouldPad(boolean value) {
-			shouldPad = value;
-		}
-		
-		public boolean getShouldPad() {
-			return shouldPad;
-		}
-
-		@Override
-		public String toString() {
-			return new String(name.getSimpleID());
-		}
-
-		public void setBytesToPad(int bytes) {
-			bytesToPad = bytes;
-		}
-
-		public int getBytesToPad() {
-			return bytesToPad;
-		}
-
-	}
-
 	private OpenMPAnalysisManager ompManager;
 	private IASTNode nodeToRefactor;
 

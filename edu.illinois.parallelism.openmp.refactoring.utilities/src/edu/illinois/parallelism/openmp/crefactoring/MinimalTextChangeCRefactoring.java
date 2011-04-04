@@ -17,7 +17,6 @@ import org.eclipse.cdt.internal.core.dom.rewrite.ASTRewriteAnalyzer;
 import org.eclipse.cdt.internal.core.dom.rewrite.astwriter.ASTWriter;
 import org.eclipse.cdt.internal.core.dom.rewrite.changegenerator.ChangeGenerator;
 import org.eclipse.cdt.internal.core.resources.ResourceLookup;
-import org.eclipse.cdt.internal.ui.refactoring.CCompositeChange;
 import org.eclipse.cdt.internal.ui.refactoring.CRefactoring;
 import org.eclipse.cdt.internal.ui.refactoring.CreateFileChange;
 import org.eclipse.cdt.internal.ui.refactoring.ModificationCollector;
