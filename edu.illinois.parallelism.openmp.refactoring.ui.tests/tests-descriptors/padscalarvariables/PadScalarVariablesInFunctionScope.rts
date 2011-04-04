@@ -1,0 +1,264 @@
+//!Pad Single Scalar Variable in Valid OpenMP Region With No Comments
+//#edu.illinois.parallelism.openmp.refactoring.padscalarvariables.tests.PadScalarVariablesRefactoringTest
+
+//@.config
+filename=Test1.c
+variables=b
+
+//@Test1.c
+#include <omp.h>
+
+#define ITERATIONS 100
+
+int main() {
+
+    int b;
+    int c;
+    int d;
+    int e;
+    int i;
+
+#pragma omp parallel private(i)
+    {
+
+        int a = 42;
+
+#pragma omp single
+        {
+#ifdef _OPENMP
+            int threads = omp_get_thread_num();
+#endif
+            /*$*/b/*$$*/ = 100;
+            c = 101;
+            e = 'e';
+            d = 'd';
+        }
+
+#pragma omp for
+        for (i = 0; i < ITERATIONS; i++) {
+            a += i;
+            printf("%d", a);
+        }
+    }
+
+    return 0;
+}
+
+//=
+#include <omp.h>
+
+#define ITERATIONS 100
+
+int main() {
+
+    char b_padding[8];
+    int b;
+    int c;
+    int d;
+    int e;
+    int i;
+
+#pragma omp parallel private(i)
+    {
+
+        int a = 42;
+
+#pragma omp single
+        {
+#ifdef _OPENMP
+            int threads = omp_get_thread_num();
+#endif
+            b = 100;
+            c = 101;
+            e = 'e';
+            d = 'd';
+        }
+
+#pragma omp for
+        for (i = 0; i < ITERATIONS; i++) {
+            a += i;
+            printf("%d", a);
+        }
+    }
+
+    return 0;
+}
+
+//!Pad Multiple Scalar Variables in Valid OpenMP Region With No Comments
+//#edu.illinois.parallelism.openmp.refactoring.padscalarvariables.tests.PadScalarVariablesRefactoringTest
+
+//@.config
+filename=Test2.c
+variables=b,c,d,e
+
+//@Test2.c
+#include <omp.h>
+
+#define ITERATIONS 100
+
+int main() {
+
+    int b;
+    int c;
+    int d;
+    int e;
+    int i;
+
+#pragma omp parallel private(i)
+    {
+
+        int a = 42;
+
+#pragma omp single
+        {
+#ifdef _OPENMP
+            int threads = omp_get_thread_num();
+#endif
+            /*$*/b/*$$*/ = 100;
+            c = 101;
+            e = 'e';
+            d = 'd';
+        }
+
+#pragma omp for
+        for (i = 0; i < ITERATIONS; i++) {
+            a += i;
+            printf("%d", a);
+        }
+    }
+
+    return 0;
+}
+
+//=
+#include <omp.h>
+
+#define ITERATIONS 100
+
+int main() {
+
+    char b_padding[8];
+    int b;
+    char c_padding[8];
+    int c;
+    char d_padding[8];
+    int d;
+    char e_padding[8];
+    int e;
+    int i;
+
+#pragma omp parallel private(i)
+    {
+
+        int a = 42;
+
+#pragma omp single
+        {
+#ifdef _OPENMP
+            int threads = omp_get_thread_num();
+#endif
+            b = 100;
+            c = 101;
+            e = 'e';
+            d = 'd';
+        }
+
+#pragma omp for
+        for (i = 0; i < ITERATIONS; i++) {
+            a += i;
+            printf("%d", a);
+        }
+    }
+
+    return 0;
+}
+
+//!Pad Multiple Scalar Variables in Valid OpenMP Region With Comments
+//#edu.illinois.parallelism.openmp.refactoring.padscalarvariables.tests.PadScalarVariablesRefactoringTest
+
+//@.config
+filename=Test3.c
+variables=b,c,d,e
+
+//@Test3.c
+#include <omp.h>
+
+#define ITERATIONS 100
+
+int main() {
+
+    int b; // Comment b
+    int c; // Comment c
+    int d; // Comment d
+    int e; // Comment e
+    int i;
+
+#pragma omp parallel private(i)
+    {
+
+        int a = 42;
+
+#pragma omp single
+        {
+#ifdef _OPENMP
+            int threads = omp_get_thread_num();
+#endif
+            /*$*/b/*$$*/ = 100;
+            c = 101;
+            e = 'e';
+            d = 'd';
+        }
+
+#pragma omp for
+        for (i = 0; i < ITERATIONS; i++) {
+            a += i;
+            printf("%d", a);
+        }
+    }
+
+    return 0;
+}
+
+//=
+#include <omp.h>
+
+#define ITERATIONS 100
+
+int main() {
+
+    char b_padding[8];
+    int b; // Comment b
+    char c_padding[8];
+    int c; // Comment c
+    char d_padding[8];
+    int d; // Comment d
+    char e_padding[8];
+    int e; // Comment e
+    int i;
+
+#pragma omp parallel private(i)
+    {
+
+        int a = 42;
+
+#pragma omp single
+        {
+#ifdef _OPENMP
+            int threads = omp_get_thread_num();
+#endif
+            b = 100;
+            c = 101;
+            e = 'e';
+            d = 'd';
+        }
+
+#pragma omp for
+        for (i = 0; i < ITERATIONS; i++) {
+            a += i;
+            printf("%d", a);
+        }
+    }
+
+    return 0;
+}
+
